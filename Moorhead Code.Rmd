@@ -27,7 +27,7 @@ library(mapview)
 ### Setting up
 getwd()
 list.files()
-register_google(key = "AIzaSyDr_n8-ZBHTHzyca-P3LnMiSCtYn2sVTkI")
+register_google(key = "#Insert API here"")
 ```
 ```{r}
 ### Data Cleaning
