@@ -38,7 +38,7 @@ register_google(key = )
 
 ### Processing Data
 
-Everything below is just applied for Moorhead. The file is uploaded. I will upload these other file for Fargo later. 
+Everything below is just applied for Moorhead. The Moorhead file is uploaded. I will upload the other file for Fargo later. 
 
 #### 2018 Data
 
