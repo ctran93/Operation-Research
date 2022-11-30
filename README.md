@@ -159,7 +159,32 @@ Addr_New_M <- st_as_sf(New23_M,
 
 
 ## Update 11/29/2022
-# 
+
+Code Explaining for "Code 2 Moorhead.Rdm" file
+
+### Loading libraries
+
+```r
+knitr::opts_chunk$set(echo = TRUE)
+### Data Import
+knitr::opts_knit$set(root.dir = 'C:/Users/Surface/Downloads/Client')
+# For getting data
+library(readxl)
+# For getting map data
+library(ggmap)
+# For modifying data
+library(dplyr)
+```
+
+### Getting data
+
+```r 
+getwd()
+list.files()
+register_google(key = "AIzaSyDr_n8-ZBHTHzyca-P3LnMiSCtYn2sVTkI")
+```
+
+
 
                   
 
