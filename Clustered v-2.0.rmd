@@ -1,0 +1,355 @@
+---
+title: "Test"
+author: "Test"
+date: "2022-11-16"
+output: html_document
+---
+
+
+
+```{r}
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+library(magrittr)
+library(stringi)
+library(sf)
+library('ggplot2')
+library('ggspatial')
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("dplyr")
+library("rgeoda")
+library("readxl")
+```
+
+
+## R Markdown
+
+
+```{r}
+library(tidycensus)
+options(tigris_use_cache = TRUE)
+
+```
+
+```{r}
+
+
+cass_pop_block <- get_decennial(
+  geography = "block", 
+  variables = "P1_001N",
+  state = "ND", 
+  year = 2020,
+  geometry = TRUE,
+  county="cass",
+  show_call = TRUE
+)
+
+clay_pop_block <- get_decennial(
+  geography = "block", 
+  variables = "P1_001N",
+  state = "MN", 
+  year = 2020,
+  geometry = TRUE,
+  county="clay"
+)
+
+cass_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "ND", 
+  year = 2020,
+  geometry = TRUE,
+  county="cass"
+)
+
+clay_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "MN", 
+  year = 2020,
+  geometry = TRUE,
+  county="clay"
+)
+
+summary(clay_pop_block)
+```
+
+
+```{r}
+fargo_filter = cbind(c( -97, -97,  -96.6,  -96.6,  -97 ),c( 47.00, 46.70, 46.70, 47.00,  47.00 ))
+fargo_filter_polygon = st_polygon(list(fargo_filter))
+
+fargo_filter_polygon_sfc = st_sfc(fargo_filter_polygon, crs='NAD83')
+fargo_filter_polygon_sf = st_sf(data.frame(geom=fargo_filter_polygon_sfc))
+
+fargo_filter_polygon_sf
+
+ggplot()+
+  geom_sf(data=fargo_filter_polygon_sf)
+```
+
+```{r}
+
+contains_cass = data.frame(st_within(cass_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+
+contains_clay = data.frame(st_within(clay_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+
+contains_cass_block = data.frame(st_within(cass_pop_block$geometry,fargo_filter_polygon_sf$geometry))
+
+contains_clay_block = data.frame(st_within(clay_pop_block$geometry,fargo_filter_polygon_sf$geometry))
+
+
+filtered_cass_pop = cass_pop_block_group[contains_cass$row.id,]
+filtered_clay_pop = clay_pop_block_group[contains_clay$row.id,]
+
+filtered_cass_pop_block = cass_pop_block[contains_cass_block$row.id,]
+filtered_clay_pop_block = clay_pop_block[contains_clay_block$row.id,]
+
+
+ggplot() +
+  geom_sf(data=filtered_clay_pop, aes(fill=value), color='red') +
+  geom_sf(data=filtered_cass_pop, aes(fill=value), color='green')
+
+ggplot() +
+  geom_sf(data=filtered_clay_pop_block, aes(fill=value), color='red') +
+  geom_sf(data=filtered_cass_pop_block, aes(fill=value), color='green')
+```
+
+
+```{r}
+ggplot()+
+  geom_sf(data = cass_pop_block, aes(fill=cass_pop_block$value, color='orange'))+
+  geom_sf(data = clay_pop_block, aes(fill=clay_pop_block$value, color='orange'))+
+  coord_sf(xlim = c( -96.75,  -96.85), ylim=c( 46.90,   46.80))
+
+ggplot()+
+  geom_sf(data = cass_pop_block_group, aes(fill=cass_pop_block_group$value, color='orange'))+
+  geom_sf(data = clay_pop_block_group, aes(fill=clay_pop_block_group$value, color='orange'))+
+  coord_sf(xlim = c( -96.75,  -96.85), ylim=c( 46.90,   46.80))
+
+```
+
+```{r}
+ggplot()+
+  geom_sf(data = cass_pop_block, aes(fill=cass_pop_block$value, color='orange'))+
+  geom_sf(data = clay_pop_block, aes(fill=clay_pop_block$value, color='orange'))+
+  coord_sf(xlim = c( -96.9535927135086,  -96.67830703065269), ylim=c( 46.93434775796007,   46.78745013835379))
+
+ggplot()+
+  geom_sf(data = cass_pop_block_group, aes(fill=cass_pop_block_group$value, color='orange'))+
+  geom_sf(data = clay_pop_block_group, aes(fill=clay_pop_block_group$value, color='orange'))+
+  coord_sf(xlim = c( -96.9535927135086,  -96.67830703065269), ylim=c( 46.93434775796007,   46.78745013835379))
+```
+
+```{r}
+#Block Group Clustering Queen
+cass_weights = queen_weights(filtered_cass_pop)
+
+data = filtered_cass_pop['GEOID']
+bound = filtered_cass_pop['value']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp_queen = maxp_greedy(w=cass_weights, df=data, bound_variable = bound, min_bound=10000)
+
+model_azp_queen = azp_greedy(10,w=cass_weights, df=data, bound_variable = bound, min_bound=1000)
+
+filtered_cass_pop_clustered_queen = cbind(filtered_cass_pop, maxpNum = model_maxp_queen$Clusters)
+
+filtered_cass_pop_clustered_queen = cbind(filtered_cass_pop_clustered_queen, azpNum = model_azp_queen$Clusters)
+
+#Block Group Clustering Rook
+cass_weights = rook_weights(filtered_cass_pop)
+
+data = filtered_cass_pop['GEOID']
+bound = filtered_cass_pop['value']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp_rook = maxp_greedy(w=cass_weights, df=data, bound_variable = data.frame(bound$value), min_bound=10000)
+
+bound
+model_azp_rook = azp_greedy(85,w=cass_weights, df=data, bound_variable=data.frame(bound$value), min_bound=5000)
+
+model_skater_rook = skater(17,cass_weights,data)
+
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop, maxpNum = model_maxp_rook$Clusters)
+
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop_clustered_rook, azpNum = model_azp_rook$Clusters)
+
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop_clustered_rook, skater = model_skater_rook$Clusters)
+
+filtered_cass_pop_clustered_rook
+```
+
+```{r}
+#Block Clustering
+
+cass_block_weights = rook_weights(filtered_cass_pop_block)
+
+data = filtered_cass_pop_block['GEOID']
+bound = filtered_cass_pop_block['value']
+data = data.frame(st_coordinates(data$geometry))
+
+model_maxp_block = maxp_greedy(w=cass_block_weights, df=data, bound_variable = bound, min_bound=1000000)
+
+model_azp_block = azp_greedy(170,w=cass_block_weights, df=data, bound_vals = bound, min_bound=1000)
+
+filtered_cass_pop_block_clustered = cbind(filtered_cass_pop_block, maxpNum = model_maxp_block$Clusters)
+
+filtered_cass_pop_block_clustered = cbind(filtered_cass_pop_block_clustered, azpNum = model_azp_block$Clusters)
+
+```
+
+```{r}
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_queen, aes(fill=factor(maxpNum)))
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_queen, aes(fill=factor(azpNum)))
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_rook, aes(fill=factor(maxpNum)))
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_rook, aes(fill=factor(azpNum)))
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_block_clustered, aes(fill=factor(maxpNum)))
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_block_clustered, aes(fill=factor(azpNum)))
+```
+
+
+
+```{r}
+
+sum(filtered_cass_pop_clustered_rook$value)
+
+filtered_cass_pop_clustered_rook %>% 
+  group_by(maxpNum) %>%
+  summarise(sum=sum(value))
+
+filtered_cass_pop_clustered_rook %>% 
+  group_by(azpNum) %>%
+  summarise(sum=sum(value))
+```
+
+```{r}
+client_data = read_excel("2020 Client List.xls")
+
+head(client_data)
+```
+
+```{r}
+cass_client=filter(client_data, BillingCity %in% c('Fagro','fargo','Fargo','FARGO', 'West Fargo'))[22:23]
+
+
+clay_client=filter(client_data, BillingCity %in% c('Moohead','Mooorhead','Moorhead',"Dilworth"))[22:23]
+
+cass_client_point = st_as_sf(cass_client, coords = c('Longitude','Latitude'), crs="NAD83")
+clay_client_point = st_as_sf(clay_client, coords = c('Longitude','Latitude'), crs="NAD83")
+
+combined_client_point = rbind(cass_client_point,clay_client_point)
+
+```
+
+```{r}
+summary(as.factor(client_data$BillingCity))
+```
+
+```{r}
+filtered_clay_pop$county ='clay'
+filtered_cass_pop$county = 'cass'
+
+combined_pop = rbind(filtered_cass_pop, filtered_clay_pop )
+
+combined_pop$clientNumber= 0
+```
+
+
+
+```{r}
+i = 0
+for (block_group in combined_pop$geometry){
+    i= i+1
+    index = data.frame(st_covered_by(combined_client_point$geometry, block_group))
+    combined_pop[i,]$clientNumber = nrow(index)
+}
+
+
+```
+
+
+```{r}
+filtered_combined_client_point_index =  data.frame(st_within(combined_client_point,fargo_filter_polygon_sf$geometry))
+
+filtered_combined_client_point = combined_client_point[filtered_combined_client_point_index$row.id,]
+ggplot()+
+  geom_sf(data=combined_pop, aes(fill=combined_pop$clientNumber))
+```
+
+```{r}
+combined_weights = rook_weights(combined_pop)
+
+data = combined_pop['GEOID']
+bound = combined_pop['clientNumber']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp = maxp_greedy(w=combined_weights, df=data, bound_variable = bound, min_bound=120)
+
+model_azp= azp_greedy(15,w=combined_weights, data)
+
+model_skater = skater(15, combined_weights, data, bound_variable = bound, min_bound=120)
+
+combined_pop_clustered = cbind(combined_pop, maxpNum = model_maxp$Clusters)
+
+combined_pop_clustered = cbind(combined_pop_clustered, azpNum = model_azp$Clusters)
+
+combined_pop_clustered = cbind(combined_pop_clustered, skaterNum = model_skater$Clusters)
+```
+
+
+
+```{r}
+ggplot()+
+  geom_sf(data=combined_pop_clustered, aes(fill=factor(maxpNum)))
+
+ggplot()+
+  geom_sf(data=combined_pop_clustered, aes(fill=factor(azpNum)))
+
+ggplot()+
+  geom_sf(data=combined_pop_clustered, aes(fill=factor(skaterNum)))
+```
+```{r}
+ combined_pop_clustered%>% 
+  group_by(maxpNum) %>%
+  summarise(sum=sum(clientNumber))
+
+combined_pop_clustered %>% 
+  group_by(azpNum) %>%
+  summarise(sum=sum(clientNumber))
+
+maxp_data=combined_pop_clustered %>% 
+  group_by(skaterNum) %>%
+  summarise(sum=sum(clientNumber))
+
+maxp_data
+```
+
+```{r}
+maxp_data = filter(maxp_data, sum>200)
+
+
+filtered = filter(combined_pop_clustered, skaterNum %in% maxp_data$skaterNum) 
+
+
+ggplot() +  geom_sf(data=combined_pop_clustered, fill='red')
+  
+```
+
+
