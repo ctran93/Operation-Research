@@ -113,6 +113,9 @@ head(client_data)
 The code above export data from the previous client report. he file used in the above code is **"2020 Client List.xls"**, which includes the address of the clients, longitude and latitude of the address.  
 
 ### C. Running Code 
+
+For the sake of brivety, the following code will not be explained in detailted as it 
+
  ```r
 fargo_filter = cbind(c( -97, -97,  -96.6,  -96.6,  -97 ),c( 47.00, 46.70, 46.70, 47.00,  47.00 ))
 fargo_filter_polygon = st_polygon(list(fargo_filter))
