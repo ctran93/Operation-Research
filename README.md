@@ -11,7 +11,7 @@ The code provided to JT Lawn Services & Landscape consists of two separate parts
 
 The optimal programming could be downloaded and run simply by using the combinations of **"Ctrl + Shift + Enter"**.
 
-### 1. Data Ingestion
+### 1. Data Ingestion (Optional)
 
 The purpose of **Data Ingestion** coding file is to export and process data from both the U.S. Census Bureau Database in order to use it for running the **JT Optimization** coding file. 
 
@@ -47,7 +47,7 @@ client_data = read_excel("2021 Client List.xls")
 
 ### Result
 
-After running both the **Data Ingestion** and **JT Optimization** file, we should get the following map, which divides the Fargo-Moorhead area into 12 different equally serviceable zones, each of them will have at least 120 houses for JT Lawn Services & Landscape to visit in a day-long working shift, which equivalent to around 8 hours of work. The map will provide in detail the boundary of zones, along with the name and number of clients (houses) in each.  
+After running all chucks of the **JT Optimization** file, we should get the following map, which divides the Fargo-Moorhead area into 12 different equally serviceable zones, each of them will have at least 120 houses for JT Lawn Services & Landscape to visit in a day-long working shift, which equivalent to around 8 hours of work. The map will provide in detail the boundary of zones, along with the name and number of clients (houses) in each.  
 
 ![mapdd](https://user-images.githubusercontent.com/114312864/206946728-58468630-cf1b-423a-88de-d4505307afa2.png)
 
