@@ -22,26 +22,38 @@ The data is collected for the Fargo-Moorhead area from the U.S. Census Bureau Da
 For example, if the Cencus API Key is "1363e3bbjncdcsjbvggaacd", the function in line 18 then will be:
 
 ```r
-census_api_key('1363e3bbjncdcsjbvggaacd')
+census_api_key("1363e3bbjncdcsjbvggaacd")
 ```
 
 After registering the Cencus API Key and supplying it into the file, the code should operate smoothly without error. 
 
 ### 2. JT Optimization
 
-The purpose of **JT Optimization** is to use the data collected from the **Data Ingestion** file and operate an optimization program using **Clustering Algorithms** to find the optimal solution for the zones distributing problem. 
+The purpose of **JT Optimization** coding file is to use the data collected from the **Data Ingestion** file and operate an optimization program using **Clustering Algorithms** to find the optimal solution for the zones distributing problem. The code is 
 
-The **JT Optimization** code, in addition, would 
+The **JT Optimization** code, in addition, would also uses data from an Excel file ***(2020 Client List.xls)***, which reports information, including names and addresses (longitude and latitude), of JT's clients in 2020. Depend on the need of JT, other clients data files might be used, for example data file for 2021, 2022, and so on. 
 
-The code has been modified for minimizing the number of actions needed from JT to run the code, however, since clients data file might change, we might need to pay more attention into this. 
-
-The following code in ***Data Ingestion*** is used for exporting data from an Excel file ***(2020 Client List.xls)***, which reports information, including names and addresses (longitude and latitude), of JT's clients in 2020. Depend on the need of JT, other clients data files might be used, for example data file for 2021, 2022, and so on. 
+Command line for exporting clients data in 2020 could be found at **line 32** of the **JT Optimization** file:
 
 ```r
 client_data = read_excel("2020 Client List.xls")
 ```
 
-In order to change the 
+In order to change the client data file used, please just simply supply the new data file into the function **read_excel()**. For example, if JT would like to use data from 2021 instead of 2020, and the client information for 2021 is collected and saved with an Excel file named **2021 Client List.xls**, the **line 32** of the **JT Optimization** then should be:
+
+```r
+client_data = read_excel("2021 Client List.xls")
+```
+
+### Result
+
+After running both the **Data Ingestion** and **JT Optimization** file, we should get the following map, which divides Fargo-Moorhead area into 12 different equally serviceable zones, each of them will have at least 120 houses for JT Lawn Services & Landscape to visit in a day long working shift, which equivalent to around 8 hours of work. The map will provide in detail the boundary of zones, along with name and number of clients (houses) in each. 
+
+![mapdd](https://user-images.githubusercontent.com/114312864/206946728-58468630-cf1b-423a-88de-d4505307afa2.png)
+
+If any problem occurs while running the code for this optimization program, or if having any question regarding of these instructions, please do not hesitate to contact us via our emails. 
+
+Thank you! 
 
 
 
