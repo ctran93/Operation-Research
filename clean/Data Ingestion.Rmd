@@ -15,7 +15,7 @@ if(length(new.packages)) install.packages(new.packages)
 library(sf)
 library(tidycensus)
 options(tigris_use_cache = TRUE)
-
+census_api_key()
 ```
 
 
