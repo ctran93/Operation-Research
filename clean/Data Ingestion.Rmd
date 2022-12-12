@@ -1,0 +1,67 @@
+---
+title: "Data Ingestion"
+author: "Avash Shrestha"
+date: "2022-12-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+list.of.packages <- c("sf","tidycensus")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library(sf)
+library(tidycensus)
+options(tigris_use_cache = TRUE)
+
+```
+
+
+```{r}
+# Getting block group data from api
+cass_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "ND", 
+  year = 2020,
+  geometry = TRUE,
+  county="cass"
+)
+
+clay_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "MN", 
+  year = 2020,
+  geometry = TRUE,
+  county="clay"
+)
+```
+
+```{r}
+#Creating a filter for block groups based on Fargo city.
+fargo_filter = cbind(c( -97, -97,  -96.6,  -96.6,  -97 ),c( 47.00, 46.70, 46.70, 47.00,  47.00 ))
+fargo_filter_polygon = st_polygon(list(fargo_filter))
+
+fargo_filter_polygon_sfc = st_sfc(fargo_filter_polygon, crs='NAD83')
+fargo_filter_polygon_sf = st_sf(data.frame(geom=fargo_filter_polygon_sfc))
+```
+
+```{r}
+#Filtering cass and county data
+contains_cass = data.frame(st_within(cass_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+
+contains_clay = data.frame(st_within(clay_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+
+filtered_cass_pop = cass_pop_block_group[contains_cass$row.id,]
+filtered_clay_pop = clay_pop_block_group[contains_clay$row.id,]
+```
+
+```{r}
+#Saving filtered data to shape file
+st_write(filtered_cass_pop, "cass.shp")
+st_write(filtered_clay_pop,'clay.shp')
+```
+

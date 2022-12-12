@@ -1,0 +1,150 @@
+---
+title: "JT Optimization"
+author: "Avash Shrestha"
+date: "2022-12-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+list.of.packages <- c("ggplot2", "sf", 'dplyr', "readxl", 'randomcoloR', 'shiny','stringr',"leaflet", "rgeoda")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+
+library("ggplot2")
+library("dplyr")
+library("readxl")
+library("sf")
+library("readxl")
+library("randomcoloR")
+library("shiny")
+library("stringr")
+library("leaflet")
+library("rgeoda")
+```
+
+
+
+```{r}
+#Loading the client data and shape files for fargo and moorhead
+client_data = read_excel("2020 Client List.xls")
+filtered_cass_pop= st_read('cass.shp')
+filtered_clay_pop =st_read('clay.shp')
+```
+
+```{r}
+
+#Filtering client data for Fargo, West Fargo, Moorhead, Dilworth
+cass_client=filter(client_data, BillingCity %in% c('Fagro','fargo','Fargo','FARGO', 'West Fargo'))[22:23]
+
+
+clay_client=filter(client_data, BillingCity %in% c('Moohead','Mooorhead','Moorhead',"Dilworth"))[22:23]
+
+cass_client_point = st_as_sf(cass_client, coords = c('Longitude','Latitude'), crs="NAD83")
+clay_client_point = st_as_sf(clay_client, coords = c('Longitude','Latitude'), crs="NAD83")
+
+combined_client_point = rbind(cass_client_point,clay_client_point)
+
+```
+
+```{r}
+#Combining the cass and clay county block group into one.
+
+filtered_clay_pop$county ='clay'
+filtered_cass_pop$county = 'cass'
+
+combined_pop = rbind(filtered_cass_pop, filtered_clay_pop )
+
+combined_pop$clientNumber= 0
+```
+
+
+```{r}
+
+# Using the filtered the client data to find number of clients in a block group
+
+i = 0
+for (block_group in combined_pop$geometry){
+    i= i+1
+    index = data.frame(st_covered_by(combined_client_point$geometry, block_group))
+    combined_pop[i,]$clientNumber = nrow(index)
+}
+
+
+```
+
+
+
+```{r}
+#Creating weights and feeding data to algorithm
+
+combined_weights = rook_weights(combined_pop)
+
+data = combined_pop['GEOID']
+bound = combined_pop['clientNumber']
+data = data.frame(st_coordinates(st_centroid(data$geometry)))
+
+model_skater = skater(15,combined_weights, data, bound_variable = bound, min_bound=120)
+
+combined_pop_clustered = cbind(combined_pop, skaterNum = model_skater$Clusters)
+
+
+```
+
+
+
+```{r}
+
+#Building the interactable map
+
+set.seed(45)
+map <- leaflet() %>% addTiles()
+
+maxZones = max(combined_pop_clustered$skaterNum)
+zones = c()
+pal = distinctColorPalette(maxZones)
+
+for (i in 1:maxZones ){
+  filtered_data = filter(combined_pop_clustered, skaterNum == i)
+  clientSum = sum(filtered_data$clientNumber)
+  geo = st_union(filtered_data) 
+  center = st_centroid(geo)
+  zones = rbind(zones,st_sf(skaterNum = i, sum = clientSum, geom = geo, centroid = center) %>% st_transform('WGS84'))
+ 
+}
+
+
+for (i in 1:maxZones ){
+  label_val = str_interp("Zone Number: ${i}; Total Clients = ${zones[i,]$sum}")
+  map = map %>% addPolygons(data = zones[i,], fillColor =pal[i],color='#444444', weight=1, fillOpacity = 0.65, highlightOptions = highlightOptions(color = "red", weight = 2,
+      bringToFront = TRUE), label=label_val) %>% addLabelOnlyMarkers(data= zones[i,]$centroid, label = i, labelOptions = labelOptions(noHide = TRUE, direction = 'center', textOnly = TRUE))
+
+}
+
+
+```
+
+
+```{r}
+
+# Serving the map on shiny server
+
+ui <- bootstrapPage(
+ tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
+  leafletOutput("mymap", width = "100%", height = "100%")
+)
+
+
+
+server <- function(input,output, session){
+  
+  
+ output$mymap <- renderLeaflet({
+  map
+ }) 
+}
+
+shinyApp(ui, server)
+```
