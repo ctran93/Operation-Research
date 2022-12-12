@@ -1,6 +1,6 @@
 # Operation Research Project Instruction
 
-### This section will provide JT Lawn Services & Landscape with a brief explanation and detail instructions to use and operate the optimization program properly and effectively. 
+### This section will provide JT Lawn Services & Landscape with a brief explanation and detailed instructions to use and operate the optimization program properly and effectively. 
 
 ## A. R and RStudio Installations
 Since the optimal program was built in **R**, installations of **R** and **RStudio** are needed before any further steps. Those who need could download R **[here](https://cran.r-project.org/)** and RStudio **[here](https://posit.co/download/rstudio-desktop/)**. 
