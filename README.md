@@ -1,190 +1,214 @@
-# Operation Research Project
+# Operation Research Project Instruction
 
-## Code Explaining 
+### This section is designated as an instruction for JT Lawn Services & Landscape to use and operate the code properly and effectively. 
 
-### Importing Data
+## R and RStudio Installations
+Since the optimal program was built in **R**, installations of **R** and **RStudio** are needed before any further steps. Clients could download R **[here](https://cran.r-project.org/)** and RStudio **[here](https://posit.co/download/rstudio-desktop/)**. 
 
-Put your file location after "root.dir =" 
+After installing R and RStudio, the optimal programming could be runned simply by pasting the code into a new RStudio markdown file. 
 
-```r
-knitr::opts_knit$set(root.dir = 'C:/Users/Surface/Downloads/Client')
-```
+Code could be runned entirely by using the combinations of **"Ctrl + Shift + Enter"**.
 
-### Loading Libraries
+## Code Explanation and Instructions
 
-```r
-# For getting data
-library(readxl)
-# For modifying data
-library(dplyr)
-# For getting map data
-library(ggmap)
-# For getting streets data
-library(osmdata)
-# For Encode Spatial Data
-library(sf)
-# For Mapping
-library(mapview)
-```
-
-### Getting data
-
-Put your Google Maps API after "key ="
-```r
-getwd()
-list.files()
-register_google(key = )
-```
-
-### Processing Data
-
-Everything below is just applied for Moorhead. The Moorhead file is uploaded. I will upload the other file for Fargo later. 
-
-#### 2018 Data
-
-```r
-## 2018
-Data18 <- read_excel("2018 Client List.xls")
-Data18_Clean <- Data18 %>%
-  select(CustomerType,
-         PhysicalCity, 
-         Longitude, 
-         Latitude)
-# Moorhead Data
-Data18_M <- Data18_Clean %>%
-  filter(PhysicalCity == "Moorhead")%>%
-  select(CustomerType, 
-         Longitude, 
-         Latitude)
-Data18_M_New <- Data18_M %>%
-  filter(CustomerType == "Client")
-Data18_M_Old <- Data18_M %>%
-  filter(CustomerType == "FormerClient")
-# Mapping 
-Addr18_M <- st_as_sf(Data18_M, 
-                     coords = c("Longitude", "Latitude"), 
-                     crs = 4326)
-```
-
-***The other 4 years would have the same code, just change the name for the variables***
-
-### Mapping 
-
-```r
-Addr18_M <- st_as_sf(Data22_M, 
-                     coords = c("Longitude", "Latitude"), 
-                     crs = 4326)
-mapview(Addr18_M)
-```
-
-Here's how the map having all clients in 2018 looks like
-
-![M_Zo](https://user-images.githubusercontent.com/114312864/204166579-41bddf31-db8a-401f-adb0-821ce2e49337.jpg)
-
-If you zoom it in, it should show the exact location of each dot. 
-
-![M_Zo](https://user-images.githubusercontent.com/114312864/204166648-e74fe886-9752-47ae-9119-a305ce1bd7e7.jpg)
-
-Here's the map for the final file without repeated clients. The map shows the data didn't focus on the F-M area so we need to figure out what was wrong with this file. 
-
-![M_Zo](https://user-images.githubusercontent.com/114312864/204166810-fd5fc67d-50aa-44f0-b7a8-3e1515bf8935.jpg)
-
-I based other step on the map we have for 2020, which is this one:
-
-![M_Zo](https://user-images.githubusercontent.com/114312864/204167139-6a65e887-9bf1-4d6e-9a3c-388d0a0e53e7.jpg)
-
-### Streets Data and Mapping 
-
-```r
-M_streets <- getbb("Moorhead Minnesota")%>%
-  opq()%>%
-  add_osm_feature(key = "highway", 
-                  value = c("motorway", "primary","secondary", "tertiary", "residential" )) %>%
-  osmdata_sf()
-  ```
-  
-  Then I added the streets and the data points together to have this map. 
-  
-  ![M_Zo](https://user-images.githubusercontent.com/114312864/204167288-3555c2fb-4dd5-4f51-8aea-525c5b37d313.jpg)
-  
-  Again, zooming in, it tell you exactly which dot lays in which area. Like this
-  
-  ![M_Zo](https://user-images.githubusercontent.com/114312864/204167493-ae355cd6-1529-4ca6-a97a-e58ed098c1a9.jpg)
-  
-  So what we need next is how to add these microareas into zones. I'm trying to test some of the codes I have. But I don't know. Let him see tmr then we decide next. 
-  
-  ## Predicting 2023 map
-  
-  We don't need to work on this, I'm just give it a try to see if we can predict the map for 2023 based on the data we have for previous years. 
-  
-  I put both the code and the map below. 
-  
- ```r 
- ### 2023 Data Prediction 
-## Return Rate # Maybe not needed
-# Previous Years
-return_r19_M <- nrow(Data19_M_Old)/nrow(Data18_M)
-return_r20_M <- nrow(Data20_M_Old)/nrow(Data19_M)
-return_r21_M <- nrow(Data21_M_Old)/nrow(Data20_M)
-return_r22_M <- nrow(Data22_M_Old)/nrow(Data21_M)
-# Expected Return Rate
-exp_r_r_M <- mean(c(return_r19_M, return_r20_M, return_r21_M, return_r22_M))
-# Random Return Clients
-return_M <- sample_n(Data20_M, round(exp_r_r_M*nrow(Data20_M)))
-# Mapping Return Clients
-Addr_Return_M <- st_as_sf(return_M, 
-                     coords = c("Longitude", "Latitude"), 
-                     crs = 4326)
-
-## Growth Rate
-# Previous Years
-grow_r19_M <- nrow(Data19_M)/nrow(Data18_M)
-grow_r20_M <- nrow(Data20_M)/nrow(Data19_M)
-grow_r21_M <- nrow(Data21_M)/nrow(Data20_M)
-grow_r22_M <- nrow(Data22_M)/nrow(Data21_M)
-# Expected Growth Rate
-exp_g_r_M <- mean(c(grow_r19_M, grow_r20_M, grow_r21_M, grow_r22_M))
-# Expected Number of New Clients
-n_new_M <- round((exp_g_r_M - exp_r_r_M)*nrow(Data22_M))
-# Expected New Clients
-New23_M <- rbind(Data18_M, Data19_M,Data20_M)
-New23_M <- sample_n(Data20_M, n_new_M)
-# Mapping New Clients
-Addr_New_M <- st_as_sf(New23_M, 
-                     coords = c("Longitude", "Latitude"), 
-                     crs = 4326)
- ```
- 
- ![M_Zo](https://user-images.githubusercontent.com/114312864/204167914-286bce26-aac8-47f5-8364-ce038f3e78a2.jpg)
-
-
-## Update 11/29/2022
-
-Code Explaining for "Code 2 Moorhead.Rdm" file
-
-### Loading libraries
-
+### A. Libraries Loading
 ```r
 knitr::opts_chunk$set(echo = TRUE)
-### Data Import
-knitr::opts_knit$set(root.dir = 'C:/Users/Surface/Downloads/Client')
-# For getting data
-library(readxl)
-# For getting map data
-library(ggmap)
-# For modifying data
-library(dplyr)
+library(tidyverse)
+library(rvest)
+library(magrittr)
+library(stringi)
+library(sf)
+library('ggplot2')
+library('ggspatial')
+library("rnaturalearth")
+library("rnaturalearthdata")
+library("dplyr")
+library("rgeoda")
+library("readxl")
+```
+The code above loads the necessary libraries for the optimization program. Some of them require to be installed manually into R, simply by following these steps:
+
+1, In the lower right pane of RStudio, click the **Packages** tab and then the **Install** button 
+
+![Pic](https://user-images.githubusercontent.com/114312864/206927176-7b2bd78a-7b95-46a9-9d7f-299ae47f2f09.jpg)
+
+2, After a pop up box appears, type the name of the package/library into the **"Packages (separate multiple packages with a space or comma):"** section, click **Install*
+
+![Pic](https://user-images.githubusercontent.com/114312864/206927109-28540b71-3d6b-42b9-ad13-1d725616e33a.jpg)
+
+After these two steps, the package/library will be installed into R, and the code is ready to operate. 
+
+### B. Getting data 
+
+#### 1. API Key Registration
+```r
+library(tidycensus)
+options(tigris_use_cache = TRUE)
+census_api_key('[API Key]', install = TRUE, overwrite = TRUE)
+readRenviron("~/.Renviron")
 ```
 
-### Getting data
+The code above exports data from the U.S. Cencus Database by using the **Tidycencus** package. An API Key is needed at this step. API Key could be registered [here](https://walker-data.com/tidycensus/reference/census_api_key.html)
 
-```r 
-getwd()
-list.files()
-register_google(key = "AIzaSyDr_n8-ZBHTHzyca-P3LnMiSCtYn2sVTkI")
+After activating the API key, insert in into the following command line:
+
+```r
+census_api_key('[API Key]', install = TRUE, overwrite = TRUE)
 ```
 
+For example, using **"123456789"** as an API Key, the command line then would be:
 
+```r
+census_api_key('123456789', install = TRUE, overwrite = TRUE)
+```
 
-                  
+#### 2. Getting data from U.S. Cencus Database
 
+```r
+cass_pop_block <- get_decennial(
+  geography = "block", 
+  variables = "P1_001N",
+  state = "ND", 
+  year = 2020,
+  geometry = TRUE,
+  county="cass",
+  show_call = TRUE
+)
+clay_pop_block <- get_decennial(
+  geography = "block", 
+  variables = "P1_001N",
+  state = "MN", 
+  year = 2020,
+  geometry = TRUE,
+  county="clay"
+)
+cass_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "ND", 
+  year = 2020,
+  geometry = TRUE,
+  county="cass"
+)
+clay_pop_block_group <- get_decennial(
+  geography = "block group", 
+  variables = "P1_001N",
+  state = "MN", 
+  year = 2020,
+  geometry = TRUE,
+  county="clay"
+)
+summary(clay_pop_block)
+```
+
+The above code exports cencus data for Fargo-Mooorhead area, including geometry information such as block and block group data from the U.S. Census Bureau Database. 
+
+#### 3. Getting data previous clients record. 
+
+```r
+client_data = read_excel("2020 Client List.xls")
+head(client_data)
+```
+The code above export data from the previous client report. he file used in the above code is **"2020 Client List.xls"**, which includes the address of the clients, longitude and latitude of the address.  
+
+### C. Running Code 
+
+For the sake of brivety, the following code will not be explained in detailted as it 
+
+ ```r
+fargo_filter = cbind(c( -97, -97,  -96.6,  -96.6,  -97 ),c( 47.00, 46.70, 46.70, 47.00,  47.00 ))
+fargo_filter_polygon = st_polygon(list(fargo_filter))
+fargo_filter_polygon_sfc = st_sfc(fargo_filter_polygon, crs='NAD83')
+fargo_filter_polygon_sf = st_sf(data.frame(geom=fargo_filter_polygon_sfc))
+fargo_filter_polygon_sf
+ggplot()+
+  geom_sf(data=fargo_filter_polygon_sf)
+  
+contains_cass = data.frame(st_within(cass_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+contains_clay = data.frame(st_within(clay_pop_block_group$geometry,fargo_filter_polygon_sf$geometry))
+contains_cass_block = data.frame(st_within(cass_pop_block$geometry,fargo_filter_polygon_sf$geometry))
+contains_clay_block = data.frame(st_within(clay_pop_block$geometry,fargo_filter_polygon_sf$geometry))
+filtered_cass_pop = cass_pop_block_group[contains_cass$row.id,]
+filtered_clay_pop = clay_pop_block_group[contains_clay$row.id,]
+filtered_cass_pop_block = cass_pop_block[contains_cass_block$row.id,]
+filtered_clay_pop_block = clay_pop_block[contains_clay_block$row.id,]
+ggplot() +
+  geom_sf(data=filtered_clay_pop, aes(fill=value), color='red') +
+  geom_sf(data=filtered_cass_pop, aes(fill=value), color='green')
+ggplot() +
+  geom_sf(data=filtered_clay_pop_block, aes(fill=value), color='red') +
+  geom_sf(data=filtered_cass_pop_block, aes(fill=value), color='green')
+  
+ggplot()+
+  geom_sf(data = cass_pop_block, aes(fill=cass_pop_block$value, color='orange'))+
+  geom_sf(data = clay_pop_block, aes(fill=clay_pop_block$value, color='orange'))+
+  coord_sf(xlim = c( -96.75,  -96.85), ylim=c( 46.90,   46.80))
+ggplot()+
+  geom_sf(data = cass_pop_block_group, aes(fill=cass_pop_block_group$value, color='orange'))+
+  geom_sf(data = clay_pop_block_group, aes(fill=clay_pop_block_group$value, color='orange'))+
+  coord_sf(xlim = c( -96.75,  -96.85), ylim=c( 46.90,   46.80))
+
+ggplot()+
+  geom_sf(data = cass_pop_block, aes(fill=cass_pop_block$value, color='orange'))+
+  geom_sf(data = clay_pop_block, aes(fill=clay_pop_block$value, color='orange'))+
+  coord_sf(xlim = c( -96.9535927135086,  -96.67830703065269), ylim=c( 46.93434775796007,   46.78745013835379))
+ggplot()+
+  geom_sf(data = cass_pop_block_group, aes(fill=cass_pop_block_group$value, color='orange'))+
+  geom_sf(data = clay_pop_block_group, aes(fill=clay_pop_block_group$value, color='orange'))+
+  coord_sf(xlim = c( -96.9535927135086,  -96.67830703065269), ylim=c( 46.93434775796007,   46.78745013835379))
+ 
+#Block Group Clustering Queen
+cass_weights = queen_weights(filtered_cass_pop)
+data = filtered_cass_pop['GEOID']
+bound = filtered_cass_pop['value']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp_queen = maxp_greedy(w=cass_weights, df=data, bound_variable = bound, min_bound=10000)
+model_azp_queen = azp_greedy(10,w=cass_weights, df=data, bound_variable = bound, min_bound=1000)
+filtered_cass_pop_clustered_queen = cbind(filtered_cass_pop, maxpNum = model_maxp_queen$Clusters)
+filtered_cass_pop_clustered_queen = cbind(filtered_cass_pop_clustered_queen, azpNum = model_azp_queen$Clusters)
+#Block Group Clustering Rook
+cass_weights = rook_weights(filtered_cass_pop)
+data = filtered_cass_pop['GEOID']
+bound = filtered_cass_pop['value']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp_rook = maxp_greedy(w=cass_weights, df=data, bound_variable = data.frame(bound$value), min_bound=10000)
+bound
+model_azp_rook = azp_greedy(85,w=cass_weights, df=data, bound_variable=data.frame(bound$value), min_bound=5000)
+model_skater_rook = skater(17,cass_weights,data)
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop, maxpNum = model_maxp_rook$Clusters)
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop_clustered_rook, azpNum = model_azp_rook$Clusters)
+filtered_cass_pop_clustered_rook = cbind(filtered_cass_pop_clustered_rook, skater = model_skater_rook$Clusters)
+filtered_cass_pop_clustered_rook
+
+#Block Clustering
+cass_block_weights = rook_weights(filtered_cass_pop_block)
+data = filtered_cass_pop_block['GEOID']
+bound = filtered_cass_pop_block['value']
+data = data.frame(st_coordinates(data$geometry))
+model_maxp_block = maxp_greedy(w=cass_block_weights, df=data, bound_variable = bound, min_bound=1000000)
+model_azp_block = azp_greedy(170,w=cass_block_weights, df=data, bound_vals = bound, min_bound=1000)
+filtered_cass_pop_block_clustered = cbind(filtered_cass_pop_block, maxpNum = model_maxp_block$Clusters)
+filtered_cass_pop_block_clustered = cbind(filtered_cass_pop_block_clustered, azpNum = model_azp_block$Clusters)
+
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_queen, aes(fill=factor(maxpNum)))
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_queen, aes(fill=factor(azpNum)))
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_rook, aes(fill=factor(maxpNum)))
+ggplot() +
+  geom_sf(data=filtered_cass_pop_clustered_rook, aes(fill=factor(azpNum)))
+ggplot() +
+  geom_sf(data=filtered_cass_pop_block_clustered, aes(fill=factor(maxpNum)))
+ggplot() +
+  geom_sf(data=filtered_cass_pop_block_clustered, aes(fill=factor(azpNum)))
+  
+sum(filtered_cass_pop_clustered_rook$value)
+filtered_cass_pop_clustered_rook %>% 
+  group_by(maxpNum) %>%
+  summarise(sum=sum(value))
+filtered_cass_pop_clustered_rook %>% 
+  group_by(azpNum) %>%
+  summarise(sum=sum(value))
+```
